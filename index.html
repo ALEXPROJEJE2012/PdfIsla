@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso a PDFs - Usuarios Autorizados</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; background-color: #f0f0f0; padding: 20px; }
+    .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    input, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ddd; }
+    button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    #content { display: none; }
+    .pdf-link { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container" id="login">
+    <h2>Inicio de Sesión</h2>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Usuario" required>
+      <input type="password" id="password" placeholder="Contraseña" required>
+      <button type="submit">Iniciar Sesión</button>
+    </form>
+  </div>
+
+  <div class="container" id="content">
+    <h2>Bienvenido/a</h2>
+    <div id="pdfList"></div>
+    <button id="logout">Cerrar Sesión</button>
+  </div>
+
+  <!-- Firebase Configuración -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
+    import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCarbbzegYknjEjqjoqQljjeUqWELuiKu8",
+      authDomain: "accesopdfusuarios.firebaseapp.com",
+      projectId: "accesopdfusuarios",
+      storageBucket: "accesopdfusuarios.firebasestorage.app",
+      messagingSenderId: "659014884209",
+      appId: "1:659014884209:web:593554fede78b43a8bf4d0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const storage = getStorage(app);
+
+    const usuarios = {
+      "Sara.Artigas": "art2012",
+      "Paula.Villar": "Vill2012",
+      "Jefrey.Alexander": "Ale2010",
+      "Alexander.Mi2012": "oV4rDm2m"
+    };
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if (usuarios[username] === password) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("content").style.display = "block";
+        cargarPDFs();
+      } else {
+        alert("Usuario o contraseña incorrectos.");
+      }
+    });
+
+    async function cargarPDFs() {
+      const pdfList = document.getElementById("pdfList");
+      pdfList.innerHTML = "Cargando PDFs...";
+      try {
+        const storageRef = ref(storage);
+        const result = await listAll(storageRef);
+        pdfList.innerHTML = "";
+        if (result.items.length === 0) pdfList.innerHTML = "No hay PDFs disponibles.";
+        result.items.forEach(async (item) => {
+          const url = await getDownloadURL(item);
+          const link = document.createElement("a");
+          link.href = url;
+          link.textContent = `📄 ${item.name}`;
+          link.target = "_blank";
+          link.classList.add("pdf-link");
+          pdfList.appendChild(link);
+          pdfList.appendChild(document.createElement("br"));
+        });
+      } catch (error) {
+        pdfList.innerHTML = "Error al cargar los PDFs.";
+      }
+    }
+
+    document.getElementById("logout").addEventListener("click", () => {
+      document.getElementById("content").style.display = "none";
+      document.getElementById("login").style.display = "block";
+    });
+  </script>
+</body>
+</html>
